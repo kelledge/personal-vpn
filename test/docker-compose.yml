@@ -1,0 +1,119 @@
+version: '3'
+
+services:
+  openvpn-server:
+    image: kylemanna/openvpn
+    cap_add:
+     - NET_ADMIN
+    restart: always
+    depends_on:
+      - etcd
+      - dns
+    expose:
+      - "1194/udp"
+    volumes:
+      - ovpn-data:/etc/openvpn
+    networks:
+      - vpn_net
+
+  dns:
+    image: coredns/coredns
+    command: -conf /dns.cfg
+    volumes:
+      - ./dns.cfg:/dns.cfg
+    depends_on:
+      - etcd
+    expose:
+      - "53/tcp"
+      - "53/udp"
+    networks:
+      vpn_net:
+        ipv4_address: 172.16.238.254
+
+  etcd:
+    image: quay.io/coreos/etcd:v2.3.8
+    command:
+      - -listen-client-urls
+      - "http://0.0.0.0:2379,http://0.0.0.0:4001"
+      - -advertise-client-urls
+      - "http://etcd:2379,http://etcd:4001"
+    expose:
+      - "2379"
+      - "4001"
+    networks:
+      - vpn_net
+
+  debian:
+    image: debian:jessie
+    command: sleep infinity
+    networks:
+      - vpn_net
+    dns: 172.16.238.254
+    dns_search: testing.local
+
+  optimus-client:
+    image: ekristen/openvpn-client
+    command:
+      - --config
+      - /etc/openvpn/client.ovpn
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - openvpn-server
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./optimus.ovpn:/etc/openvpn/client.ovpn
+    networks:
+      - vpn_net
+    dns: 172.16.238.254
+    dns_search: testing.local
+
+  bumblebee-client:
+    image: ekristen/openvpn-client
+    command:
+      - --config
+      - /etc/openvpn/client.ovpn
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - openvpn-server
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./bumblebee.ovpn:/etc/openvpn/client.ovpn
+    networks:
+      - vpn_net
+    dns: 172.16.238.254
+    dns_search: testing.local
+
+  ratchet-client:
+    image: ekristen/openvpn-client
+    command:
+      - --config
+      - /etc/openvpn/client.ovpn
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - openvpn-server
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./ratchet.ovpn:/etc/openvpn/client.ovpn
+    networks:
+      - vpn_net
+    dns: 172.16.238.254
+    dns_search: testing.local
+
+volumes:
+  ovpn-data:
+    external: true
+
+networks:
+  vpn_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      -
+        subnet: 172.16.238.0/24

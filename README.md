@@ -13,25 +13,19 @@ as the dns server using the push options.
 
 
 ## Simple Testing
-All records are nested under the `skydns` key as currently configured. This just
-makes following examples easier for now. In the future this will be the local
-domain that I find best fits the vpn.
+The etcd plugin is configured to resolve the testing.local domain currently.
 
-The etcd plugin is configured to resolve the skydns.local domain currently.
-
-Add `example.skydns.local` record:
+Add `example.testing.local` record:
 ```
-curl http://etcd:2379/v2/keys/skydns/local/skydns/example -XPUT \
-  -d value='{"host": "1.2.3.6"}'
+curl http://etcd:2379/v2/keys/coredns/local/testing/example -XPUT -d value='{"host": "1.2.3.6"}'
 ```
 
-Add `example.skydns.local` reverse record:
+Add `example.testing.local` reverse record:
 ```
-curl -XPUT http://etcd:4001/v2/keys/skydns/arpa/in-addr/1/2/3/6 \
-  -d value='{"host":"example.skydns.local."}'
+curl -XPUT http://etcd:4001/v2/keys/coredns/arpa/in-addr/1/2/3/6 -d value='{"host":"example.testing.local."}'
 ```
 
-Remove `example.skydns.local` record:
+Remove `example.testing.local` record:
 ```
-curl http://etcd:2379/v2/keys/skydns/local/skydns/example -XDELETE
+curl http://etcd:2379/v2/keys/coredns/local/testing/example -XDELETE
 ```
