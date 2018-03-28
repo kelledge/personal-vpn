@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exec >> /etc/openvpn/learn-address.log
+exec >> /tmp/learn-address.log
 
 echo "###"
 echo "$@"
