@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+import sys
+import json
+import argparse
+import logging
+
+
+import etcd
+
+
+logger = logging.getLogger()
+
+
+def common_name_as_path(common_name):
+    prefix = 'coredns'
+    return '/%s/local/kaak/%s' % (prefix, common_name)
+
+
+def address_as_record(address):
+    return json.dumps({
+        'host': address
+    })
+
+
+def add_client(client, address, common_name):
+    logger.debug('add_client: %s, %s', address, common_name)
+    client.write(common_name_as_path(common_name), address_as_record(address))
+
+
+def update_client(client, address, common_name):
+    logger.debug('update_client: %s, %s', address, common_name)
+    client.write(common_name_as_path(common_name), address_as_record(address))
+
+
+def delete_client(client, address):
+    logger.debug('delete_client: %s', address)
+
+
+def arg_parser():
+    parser = argparse.ArgumentParser(prog='ovpn_learn_address')
+
+    sub_parser = parser.add_subparsers(dest="action")
+
+    add_parser = sub_parser.add_parser('add', help='Learn a client address')
+    add_parser.add_argument('address', help='The address being learned')
+    add_parser.add_argument('common_name', help='The common name on the certificate associated with the client linked to this address')
+
+    update_parser = sub_parser.add_parser('update', help='Re-learn a client address')
+    update_parser.add_argument('address', help='The address being re-learned')
+    update_parser.add_argument('common_name', help='The common name on the certificate associated with the client linked to this address.')
+
+    delete_parser = sub_parser.add_parser('delete', help='Unlearn a client address')
+    delete_parser.add_argument('address', help='The address being unlearned')
+
+    return parser
+
+
+def main():
+    parser = arg_parser()
+    args = parser.parse_args()
+    client = etcd.Client(host='etcd', port=2379)
+
+    logger.debug("etcd machines: %r", client.machines)
+
+    if args.action == 'add':
+        add_client(client, args.address, args.common_name)
+    elif args.action == 'update':
+        update_client(client, args.address, args.common_name)
+    elif args.action == 'delete':
+        delete_client(client, args.address)
+    else:
+        raise RuntimeError('Argument Parsing Failed!')
+
+
+if __name__ == '__main__':
+    logging.basicConfig(filename='/tmp/learn_address.log', level=logging.DEBUG)
+    main()
