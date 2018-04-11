@@ -5,6 +5,11 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
     cap_add:
      - NET_ADMIN
     restart: always
@@ -21,6 +26,11 @@ services:
   dns:
     image: coredns/coredns
     command: -conf /dns.cfg
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
     volumes:
       - ./dns.cfg:/dns.cfg
     depends_on:
@@ -39,6 +49,11 @@ services:
       - "http://0.0.0.0:2379,http://0.0.0.0:4001"
       - -advertise-client-urls
       - "http://etcd:2379,http://etcd:4001"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
     expose:
       - "2379"
       - "4001"
